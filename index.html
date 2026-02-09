@@ -36,7 +36,7 @@
             <header class="bg-blue-600 p-8 rounded-b-[3rem] text-white shadow-xl">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h1 class="text-xl font-bold uppercase">Business Hub</h1>
+                        <h1 class="text-xl font-bold uppercase tracking-tighter">Business Hub</h1>
                         <p id="userDisplay" class="text-[10px] opacity-70 font-bold uppercase tracking-widest"></p>
                     </div>
                     <button onclick="location.reload()" class="bg-white/20 p-2 rounded-xl active:scale-90 transition">
@@ -45,17 +45,17 @@
                 </div>
                 
                 <div class="grid grid-cols-3 gap-2">
-                    <div class="bg-white/10 p-3 rounded-2xl border border-white/10">
+                    <div class="bg-white/10 p-3 rounded-2xl border border-white/10 text-center">
                         <p class="text-[8px] font-bold opacity-70 uppercase">ආදායම</p>
-                        <p id="totalIn" class="text-sm font-bold">0</p>
+                        <p id="totalIn" class="text-xs font-bold truncate">0</p>
                     </div>
-                    <div class="bg-white/10 p-3 rounded-2xl border border-white/10">
+                    <div class="bg-white/10 p-3 rounded-2xl border border-white/10 text-center">
                         <p class="text-[8px] font-bold opacity-70 uppercase">වියදම</p>
-                        <p id="totalOut" class="text-sm font-bold">0</p>
+                        <p id="totalOut" class="text-xs font-bold truncate">0</p>
                     </div>
-                    <div class="bg-white/10 p-3 rounded-2xl border border-white/20 bg-white/20">
-                        <p class="text-[8px] font-bold opacity-70 uppercase">ලාභය</p>
-                        <p id="netTotal" class="text-sm font-bold">0</p>
+                    <div class="bg-white/20 p-3 rounded-2xl border border-white/30 text-center shadow-inner">
+                        <p class="text-[8px] font-bold opacity-90 uppercase">ලාභය</p>
+                        <p id="netTotal" class="text-xs font-bold truncate">0</p>
                     </div>
                 </div>
             </header>
@@ -67,7 +67,7 @@
                     <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-4">මෑත ගනුදෙනු</h3>
                     <div id="recordsList" class="space-y-2 mb-10"></div>
                     <div class="text-center py-6 border-t mt-4">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">Saman Yapa Bandara ගේ නිර්මාණයක්</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Saman Yapa Bandara ගේ නිර්මාණයක්</p>
                     </div>
                 </div>
 
@@ -93,11 +93,11 @@
 
                 <div id="adminTab" class="hidden">
                     <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border">
-                        <h2 class="text-lg font-bold mb-5 text-blue-700">පරිශීලක කළමනාකරණය</h2>
+                        <h2 class="text-lg font-bold mb-5 text-blue-700 font-bold">Manager ලියාපදිංචිය</h2>
                         <div class="space-y-4">
                             <input id="newUName" type="text" placeholder="Manager නම" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
                             <input id="newUPass" type="text" placeholder="Password" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
-                            <button onclick="addUser()" class="w-full bg-slate-800 text-white p-4 rounded-2xl font-bold active:scale-95 transition">Manager කෙනෙක් එක් කරන්න</button>
+                            <button onclick="addUser()" class="w-full bg-slate-800 text-white p-4 rounded-2xl font-bold active:scale-95 transition">Manager එක් කරන්න</button>
                         </div>
                         <div id="usersList" class="mt-8 space-y-2 border-t pt-4"></div>
                     </div>
@@ -113,29 +113,45 @@
     </div>
 
     <script>
-        // Data Load
-        let records = JSON.parse(localStorage.getItem('biz_v3_data') || '[]');
-        let users = JSON.parse(localStorage.getItem('biz_v3_users') || '[{"u":"admin","p":"4321","role":"admin"}]');
+        // Use a consistent storage key for users
+        const STORAGE_KEY_USERS = 'biz_hub_users_v1';
+        const STORAGE_KEY_DATA = 'biz_hub_data_v1';
+
+        let users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS)) || [
+            { u: "admin", p: "4321", role: "admin" }
+        ];
+        let records = JSON.parse(localStorage.getItem(STORAGE_KEY_DATA)) || [];
         let currentType = 'in';
         let currentUser = null;
 
         const branches = ["පරගම්මන ශොප්", "පරගම්මන වැඩපොළ", "නෙලුන්දෙනිය ශොප්", "හෙල්මට් ශොප්", "කෑගල්ල ශොප්", "කෑගල්ල වැඩපොළ", "කුෂන් වැඩපොළ", "රන්වල බයික්", "රන්වල ත්‍රීවීල්"];
 
         function handleLogin() {
-            const u = document.getElementById('uName').value.trim().toLowerCase();
-            const p = document.getElementById('uPass').value.trim();
-            const user = users.find(x => x.u === u && x.p === p);
+            const uInput = document.getElementById('uName').value.trim().toLowerCase();
+            const pInput = document.getElementById('uPass').value.trim();
+            
+            // Re-load users to ensure we have the latest from localStorage
+            users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS)) || users;
+            
+            const user = users.find(x => x.u === uInput && x.p === pInput);
 
             if (user) {
                 currentUser = user;
                 document.getElementById('loginOverlay').classList.add('hidden');
                 document.getElementById('mainUI').classList.remove('hidden');
                 document.getElementById('userDisplay').innerText = user.role === 'admin' ? "ප්‍රධාන පරිපාලක" : `Manager: ${user.u}`;
-                if(user.role === 'admin') document.getElementById('adminOnlyBtn').classList.remove('hidden');
+                
+                if(user.role === 'admin') {
+                    document.getElementById('adminOnlyBtn').classList.remove('hidden');
+                } else {
+                    document.getElementById('adminOnlyBtn').classList.add('hidden');
+                }
+                
                 render();
                 renderUsers();
             } else {
                 document.getElementById('loginError').classList.remove('hidden');
+                setTimeout(() => document.getElementById('loginError').classList.add('hidden'), 3000);
             }
         }
 
@@ -143,54 +159,46 @@
             const u = document.getElementById('newUName').value.trim().toLowerCase();
             const p = document.getElementById('newUPass').value.trim();
 
-            if(!u || !p) {
-                alert("කරුණාකර නම සහ Password ඇතුළත් කරන්න");
-                return;
-            }
-
-            // පවතින පරිශීලකයෙකු දැයි පරීක්ෂාව
-            if(users.some(x => x.u === u)) {
-                alert("මෙම නම දැනටමත් පවතී");
-                return;
-            }
+            if(!u || !p) return alert("කරුණාකර නම සහ පාස්වර්ඩ් එක ඇතුළත් කරන්න.");
+            
+            if(users.some(x => x.u === u)) return alert("මෙම නම දැනටමත් පද්ධතියේ පවතී.");
 
             users.push({ u, p, role: 'manager' });
-            localStorage.setItem('biz_v3_users', JSON.stringify(users));
+            localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
             
             document.getElementById('newUName').value = '';
             document.getElementById('newUPass').value = '';
-            
             renderUsers();
-            alert("කළමනාකරු සාර්ථකව එක් කරන ලදී!");
+            alert("නව කළමනාකරු සාර්ථකව එක් කරන ලදී.");
+        }
+
+        function deleteUser(username) {
+            if(username === 'admin') return alert("ප්‍රධාන පරිපාලක ඉවත් කළ නොහැක.");
+            if(confirm("මෙම කළමනාකරු ඉවත් කිරීමට ඔබට විශ්වාසද?")) {
+                users = users.filter(x => x.u !== username);
+                localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+                renderUsers();
+            }
         }
 
         function renderUsers() {
             const uList = document.getElementById('usersList');
-            uList.innerHTML = '<p class="text-[10px] font-bold text-slate-400 uppercase mb-3">ලියාපදිංචි කළමනාකරුවන්</p>';
+            uList.innerHTML = '<p class="text-[10px] font-bold text-slate-400 uppercase mb-3 px-1">ලියාපදිංචි කළමනාකරුවන්</p>';
             
-            users.forEach((user, index) => {
+            users.forEach(user => {
                 uList.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl mb-2 border border-slate-100">
                         <div>
-                            <p class="font-bold text-slate-700">${user.u} <span class="text-[9px] bg-blue-100 text-blue-600 px-2 rounded-full">${user.role}</span></p>
+                            <p class="font-bold text-slate-700 uppercase text-xs">${user.u}</p>
                             <p class="text-[10px] text-slate-400 font-mono">PW: ${user.p}</p>
                         </div>
-                        ${user.role !== 'admin' ? `<button onclick="deleteUser('${user.u}')" class="text-red-300 hover:text-red-500"><i data-lucide="user-x" class="w-4 h-4"></i></button>` : ''}
+                        ${user.role !== 'admin' ? `<button onclick="deleteUser('${user.u}')" class="text-red-300 hover:text-red-500"><i data-lucide="user-x" class="w-4 h-4"></i></button>` : '<i data-lucide="shield" class="w-4 h-4 text-blue-200"></i>'}
                     </div>
                 `;
             });
             lucide.createIcons();
         }
 
-        function deleteUser(username) {
-            if(confirm("මෙම කළමනාකරුවා ඉවත් කිරීමට ඔබට විශ්වාසද?")) {
-                users = users.filter(x => x.u !== username);
-                localStorage.setItem('biz_v3_users', JSON.stringify(users));
-                renderUsers();
-            }
-        }
-
-        // --- අනෙක් Functions නොවෙනස්ව පවතී ---
         function setRecType(type) {
             currentType = type;
             document.getElementById('btnIn').className = type === 'in' ? "flex-1 p-4 rounded-2xl font-bold border-2 border-green-500 bg-green-50 text-green-600" : "flex-1 p-4 rounded-2xl font-bold border-2 border-transparent bg-slate-50 text-slate-400";
@@ -202,9 +210,12 @@
             const d = document.getElementById('fDesc').value;
             const a = parseFloat(document.getElementById('fAmount').value);
             const date = new Date().toLocaleDateString();
-            if(!d || !a) return alert("කරුණාකර සියල්ල පුරවන්න");
+
+            if(!d || !a) return alert("කරුණාකර විස්තර සහ මුදල ඇතුළත් කරන්න.");
+
             records.push({ id: Date.now(), b, t: currentType, d, a, date, user: currentUser.u });
-            localStorage.setItem('biz_v3_data', JSON.stringify(records));
+            localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(records));
+            
             document.getElementById('fDesc').value = '';
             document.getElementById('fAmount').value = '';
             showTab('home');
@@ -212,9 +223,9 @@
         }
 
         function deleteRecord(id) {
-            if(confirm("මකා දැමීමට ඔබට විශ්වාසද?")) {
+            if(confirm("මෙම ගනුදෙනුව මකා දැමීමට ඔබට විශ්වාසද?")) {
                 records = records.filter(r => r.id !== id);
-                localStorage.setItem('biz_v3_data', JSON.stringify(records));
+                localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(records));
                 render();
             }
         }
@@ -223,13 +234,15 @@
             let grandIn = 0, grandOut = 0;
             const branchData = {};
             branches.forEach(br => branchData[br] = { in: 0, out: 0 });
+
             records.forEach(r => {
                 if(r.t === 'in') { branchData[r.b].in += r.a; grandIn += r.a; }
                 else { branchData[r.b].out += r.a; grandOut += r.a; }
             });
-            document.getElementById('totalIn').innerText = 'රු. ' + grandIn.toLocaleString();
-            document.getElementById('totalOut').innerText = 'රු. ' + grandOut.toLocaleString();
-            document.getElementById('netTotal').innerText = 'රු. ' + (grandIn - grandOut).toLocaleString();
+
+            document.getElementById('totalIn').innerText = 'රු.' + grandIn.toLocaleString();
+            document.getElementById('totalOut').innerText = 'රු.' + grandOut.toLocaleString();
+            document.getElementById('netTotal').innerText = 'රු.' + (grandIn - grandOut).toLocaleString();
 
             const bSummary = document.getElementById('branchSummary');
             bSummary.innerHTML = branches.map(br => {
@@ -253,8 +266,8 @@
                     <div class="flex items-center gap-2">
                         <button onclick="deleteRecord(${r.id})" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         <div>
-                            <p class="font-bold text-slate-700">${r.b} <span class="text-[9px] font-normal text-slate-400">| ${r.date}</span></p>
-                            <p class="text-[9px] text-slate-400">${r.d}</p>
+                            <p class="font-bold text-slate-700 leading-tight">${r.b} <span class="text-[8px] font-normal text-slate-400">| ${r.date}</span></p>
+                            <p class="text-[9px] text-slate-400 uppercase font-medium">${r.d} <span class="opacity-50 text-[7px]">by ${r.user}</span></p>
                         </div>
                     </div>
                     <p class="font-bold ${r.t === 'in' ? 'text-green-600' : 'text-red-500'}">${r.t === 'in' ? '+' : '-'} ${r.a.toLocaleString()}</p>
@@ -276,6 +289,10 @@
         }
 
         lucide.createIcons();
+        // Set initial users in case it's empty
+        if(!localStorage.getItem(STORAGE_KEY_USERS)) {
+            localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+        }
     </script>
 </body>
 </html>
