@@ -7,161 +7,220 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
-        .tab-active { color: #2563eb; border-bottom: 3px solid #2563eb; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .login-bg { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div id="app" class="max-w-md mx-auto min-h-screen bg-white shadow-xl relative pb-24">
+<body class="bg-slate-50 text-slate-900">
+    <div id="app" class="max-w-md mx-auto min-h-screen relative">
         
-        <!-- Header -->
-        <div class="bg-blue-600 p-8 text-white rounded-b-[2.5rem] shadow-lg">
-            <h1 class="text-xl font-bold">Business Hub SL</h1>
-            <div class="mt-6 grid grid-cols-2 gap-4">
-                <div class="bg-white/20 p-4 rounded-2xl">
-                    <p class="text-[10px] uppercase font-bold opacity-80">ආදායම</p>
-                    <p id="totalIn" class="text-lg font-bold">රු. 0</p>
+        <!-- Login Screen -->
+        <div id="loginScreen" class="fixed inset-0 z-[100] login-bg flex items-center justify-center p-6">
+            <div class="bg-white w-full rounded-[2.5rem] p-8 shadow-2xl text-center">
+                <div class="bg-blue-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="lock" class="w-10 h-10 text-blue-600"></i>
                 </div>
-                <div class="bg-white/20 p-4 rounded-2xl">
-                    <p class="text-[10px] uppercase font-bold opacity-80">වියදම</p>
-                    <p id="totalOut" class="text-lg font-bold">රු. 0</p>
+                <h2 class="text-2xl font-bold text-slate-800">පිවිසුම</h2>
+                <p class="text-slate-400 text-sm mb-8 font-medium tracking-tight">කරුණාකර ඔබගේ විස්තර ඇතුළත් කරන්න</p>
+                
+                <div class="space-y-4">
+                    <input id="uName" type="text" placeholder="පරිශීලක නාමය" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <input id="uPass" type="password" placeholder="මුද්‍රා පදය" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <button onclick="checkLogin()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">ඇතුළු වන්න</button>
                 </div>
-            </div>
-            <div class="mt-4 bg-white text-blue-600 p-4 rounded-2xl flex justify-between items-center shadow-inner">
-                <span class="font-bold">ශුද්ධ ලාභය</span>
-                <span id="netProfit" class="text-xl font-bold">රු. 0</span>
-            </div>
-        </div>
-
-        <!-- Content -->
-        <div id="mainContent" class="p-5">
-            <!-- List View -->
-            <div id="listView">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">ගනුදෙනු විස්තර</h3>
-                    <select id="filter" class="text-xs font-bold text-blue-600 bg-transparent outline-none">
-                        <option value="All">සියලුම ශාඛා</option>
-                    </select>
-                </div>
-                <div id="recordList" class="space-y-3">
-                    <div class="text-center py-10 text-gray-300">දත්ත පූරණය වෙමින්...</div>
-                </div>
-            </div>
-
-            <!-- Form View (Hidden by default) -->
-            <div id="formView" class="hidden animate-in fade-in">
-                <form id="entryForm" class="bg-gray-50 p-6 rounded-3xl border space-y-4">
-                    <h2 class="text-lg font-bold">නව දත්තයක් එක් කරන්න</h2>
-                    <select id="branchIn" class="w-full p-4 rounded-2xl border outline-none"></select>
-                    <select id="typeIn" class="w-full p-4 rounded-2xl border outline-none">
-                        <option value="in">ආදායම (Income)</option>
-                        <option value="out">වියදම (Expense)</option>
-                    </select>
-                    <input id="descIn" type="text" placeholder="විස්තරය" required class="w-full p-4 rounded-2xl border outline-none">
-                    <input id="amountIn" type="number" placeholder="මුදල (රු.)" required class="w-full p-4 rounded-2xl border outline-none text-xl font-bold text-blue-600">
-                    <button type="submit" id="saveBtn" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg">සුරකින්න</button>
-                </form>
+                <p id="errorMsg" class="text-red-500 text-xs mt-4 hidden">පරිශීලක නාමය හෝ මුද්‍රා පදය වැරදියි!</p>
             </div>
         </div>
 
-        <!-- Bottom Nav -->
-        <div class="fixed bottom-6 left-6 right-6 max-w-[calc(448px-3rem)] mx-auto bg-white border shadow-2xl rounded-3xl p-3 flex justify-around z-50">
-            <button onclick="showTab('home')" id="homeTab" class="flex flex-col items-center p-2 tab-active">
-                <i data-lucide="layout-grid" class="w-6 h-6"></i>
-                <span class="text-[8px] font-bold mt-1">සාරාංශය</span>
-            </button>
-            <button onclick="showTab('add')" id="addTab" class="flex flex-col items-center p-2 text-gray-400">
-                <i data-lucide="plus-circle" class="w-6 h-6"></i>
-                <span class="text-[8px] font-bold mt-1">එක් කරන්න</span>
-            </button>
+        <!-- Main App Content (Hidden until login) -->
+        <div id="mainContent" class="hidden pb-24">
+            <!-- Header Section -->
+            <header class="bg-blue-600 p-8 rounded-b-[2.5rem] text-white shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight">BUSINESS HUB SL</h1>
+                        <p class="text-[10px] opacity-70 font-bold uppercase tracking-widest">කළමනාකරණ පද්ධතිය</p>
+                    </div>
+                    <button onclick="logout()" class="bg-white/20 p-2 rounded-xl active:scale-90 transition">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="bg-white/10 p-5 rounded-3xl border border-white/10 backdrop-blur-md">
+                    <p class="text-[10px] font-bold opacity-80 uppercase mb-1">මුළු ශුද්ධ ලාභය</p>
+                    <h2 id="netDisplay" class="text-3xl font-bold tracking-tight">රු. 0</h2>
+                    <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/10">
+                        <div>
+                            <p class="text-[9px] font-bold opacity-70 uppercase">ආදායම</p>
+                            <p id="incDisplay" class="font-bold text-green-300">රු. 0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] font-bold opacity-70 uppercase">වියදම</p>
+                            <p id="expDisplay" class="font-bold text-red-300">රු. 0</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <main class="p-5">
+                <div id="homeView">
+                    <div class="flex justify-between items-center mb-4 px-2">
+                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">මෑත ගනුදෙනු</h3>
+                        <button onclick="clearData()" class="text-[10px] text-red-400 font-bold uppercase">සියල්ල මකන්න</button>
+                    </div>
+                    <div id="recordsList" class="space-y-3">
+                        <!-- Data will appear here -->
+                    </div>
+                </div>
+
+                <!-- Form Area -->
+                <div id="addView" class="hidden">
+                    <div class="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100">
+                        <h2 class="text-lg font-bold mb-5">නව දත්තයක් එක් කරන්න</h2>
+                        <div class="space-y-4">
+                            <select id="branch" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+                                <option>පරගම්මන ශොප්</option><option>රන්වල බයික් ශොප්</option><option>රන්වල ත්‍රීවීල් ශොප්</option>
+                                <option>කෑගල්ල ශොප්</option><option>හෙල්මට් ශොප්</option><option>කෑගල්ල වර්ක් ශොප්</option>
+                                <option>පරගම්මන වර්ක් ශොප්</option><option>කුෂන් වැඩපොළ</option>
+                            </select>
+                            <select id="type" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none">
+                                <option value="in">ආදායම (Income)</option>
+                                <option value="out">වියදම (Expense)</option>
+                            </select>
+                            <input id="desc" type="text" placeholder="විස්තරය (උදා: බයික් සර්විස්)" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none">
+                            <input id="amount" type="number" placeholder="මුදල (රු.)" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none text-xl font-bold text-blue-600">
+                            <button onclick="saveEntry()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg shadow-blue-100 active:scale-95 transition">සුරකින්න</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Navigation Bar -->
+            <nav class="fixed bottom-6 left-6 right-6 max-w-[calc(448px-3rem)] mx-auto bg-white/90 backdrop-blur-xl border border-white/50 shadow-2xl rounded-[2rem] p-3 flex justify-around items-center z-50">
+                <button onclick="showTab('home')" id="homeTab" class="flex flex-col items-center gap-1 text-blue-600 transition">
+                    <i data-lucide="layout-grid" class="w-6 h-6"></i>
+                    <span class="text-[8px] font-bold uppercase">සාරාංශය</span>
+                </button>
+                <div class="w-px h-6 bg-slate-100"></div>
+                <button onclick="showTab('add')" id="addTab" class="flex flex-col items-center gap-1 text-slate-300 transition">
+                    <i data-lucide="plus-circle" class="w-6 h-6"></i>
+                    <span class="text-[8px] font-bold uppercase">එක් කරන්න</span>
+                </button>
+            </nav>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    <script>
+        // Data Management
+        let records = JSON.parse(localStorage.getItem('biz_data') || '[]');
 
-        const config = JSON.parse(window.__firebase_config || '{}');
-        const app = initializeApp(config);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const appId = window.__app_id || 'pieris-motors-audit-2026';
+        function checkLogin() {
+            const u = document.getElementById('uName').value;
+            const p = document.getElementById('uPass').value;
+            const error = document.getElementById('errorMsg');
 
-        const BRANCHES = ["පරගම්මන ශොප්", "රන්වල බයික් ශොප්", "රන්වල ත්‍රීවීල් ශොප්", "කෑගල්ල ශොප්", "හෙල්මට් ශොප්", "කෑගල්ල වර්ක් ශොප්", "පරගම්මන වර්ක් ශොප්", "කුෂන් වැඩපොළ"];
+            if (u === 'admin' && p === '1234') {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                localStorage.setItem('isLogged', 'true');
+                render();
+            } else {
+                error.classList.remove('hidden');
+            }
+        }
 
-        // Init UI
-        const branchSelect = document.getElementById('branchIn');
-        const filterSelect = document.getElementById('filter');
-        BRANCHES.forEach(b => {
-            branchSelect.innerHTML += `<option value="${b}">${b}</option>`;
-            filterSelect.innerHTML += `<option value="${b}">${b}</option>`;
-        });
-        lucide.createIcons();
+        function logout() {
+            localStorage.removeItem('isLogged');
+            location.reload();
+        }
 
-        // Tabs
-        window.showTab = (t) => {
-            const isHome = t === 'home';
-            document.getElementById('listView').classList.toggle('hidden', !isHome);
-            document.getElementById('formView').classList.toggle('hidden', isHome);
-            document.getElementById('homeTab').classList.toggle('tab-active', isHome);
-            document.getElementById('homeTab').classList.toggle('text-gray-400', !isHome);
-            document.getElementById('addTab').classList.toggle('tab-active', !isHome);
-            document.getElementById('addTab').classList.toggle('text-gray-400', isHome);
-        };
+        // Check if already logged in
+        if (localStorage.getItem('isLogged') === 'true') {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+        }
 
-        // Auth & Sync
-        signInAnonymously(auth);
-        const col = collection(db, 'artifacts', appId, 'public', 'data', 'records');
-        onSnapshot(col, (snap) => {
-            const data = snap.docs.map(d => d.data()).sort((a,b) => b.t - a.t);
-            render(data);
-        });
-
-        const render = (records) => {
-            const fValue = filterSelect.value;
-            const filtered = records.filter(r => fValue === 'All' || r.branch === fValue);
-            let inc = 0, exp = 0;
+        function render() {
+            const list = document.getElementById('recordsList');
+            const incD = document.getElementById('incDisplay');
+            const expD = document.getElementById('expDisplay');
+            const netD = document.getElementById('netDisplay');
             
-            document.getElementById('recordList').innerHTML = filtered.map(r => {
-                if(r.type === 'in') inc += r.amount; else exp += r.amount;
-                return `
-                    <div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 rounded-xl ${r.type === 'in' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}">
-                                <i data-lucide="${r.type === 'in' ? 'arrow-up' : 'arrow-down'}" class="w-4 h-4"></i>
+            let totalIn = 0, totalOut = 0;
+
+            if (records.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-20 text-slate-300">
+                        <i data-lucide="folder-open" class="mx-auto w-12 h-12 mb-3 opacity-20"></i>
+                        <p class="italic text-sm">දත්ත කිසිවක් හමු නොවීය.</p>
+                    </div>`;
+            } else {
+                list.innerHTML = records.map((r, index) => {
+                    const isInc = r.type === 'in';
+                    if(isInc) totalIn += r.amount; else totalOut += r.amount;
+                    return `
+                        <div class="bg-white p-4 rounded-2xl border border-slate-50 flex justify-between items-center shadow-sm hover:shadow-md transition">
+                            <div class="flex items-center gap-4">
+                                <div class="p-3 rounded-2xl ${isInc ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}">
+                                    <i data-lucide="${isInc ? 'arrow-up-right' : 'arrow-down-right'}" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800 leading-tight">${r.branch}</p>
+                                    <p class="text-[10px] text-slate-400 font-medium">${r.desc} | ${new Date(r.t).toLocaleDateString()}</p>
+                                </div>
                             </div>
-                            <div><p class="text-sm font-bold">${r.branch}</p><p class="text-[10px] text-gray-400">${r.desc}</p></div>
+                            <p class="font-bold ${isInc ? 'text-green-600' : 'text-red-600'}">${isInc ? '+' : '-'} ${r.amount.toLocaleString()}</p>
                         </div>
-                        <p class="font-bold ${r.type === 'in' ? 'text-green-600' : 'text-red-600'}">රු. ${r.amount.toLocaleString()}</p>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).reverse().join('');
+            }
 
-            document.getElementById('totalIn').innerText = 'රු. ' + inc.toLocaleString();
-            document.getElementById('totalOut').innerText = 'රු. ' + exp.toLocaleString();
-            document.getElementById('netProfit').innerText = 'රු. ' + (inc - exp).toLocaleString();
+            incD.innerText = 'රු. ' + totalIn.toLocaleString();
+            expD.innerText = 'රු. ' + totalOut.toLocaleString();
+            netD.innerText = 'රු. ' + (totalIn - totalOut).toLocaleString();
             lucide.createIcons();
-        };
+        }
 
-        filterSelect.onchange = () => { /* re-render handled by onSnapshot or manual call if needed */ };
+        function saveEntry() {
+            const branch = document.getElementById('branch').value;
+            const type = document.getElementById('type').value;
+            const desc = document.getElementById('desc').value;
+            const amount = parseFloat(document.getElementById('amount').value);
 
-        // Save
-        document.getElementById('entryForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('saveBtn');
-            btn.disabled = true; btn.innerText = "සුරකිමින්...";
-            await addDoc(col, {
-                branch: document.getElementById('branchIn').value,
-                type: document.getElementById('typeIn').value,
-                desc: document.getElementById('descIn').value,
-                amount: parseFloat(document.getElementById('amountIn').value),
-                t: Date.now()
-            });
-            btn.disabled = false; btn.innerText = "සුරකින්න";
-            e.target.reset();
+            if(!desc || !amount) return alert("කරුණාකර සියලු විස්තර පුරවන්න");
+
+            records.push({ branch, type, desc, amount, t: Date.now() });
+            localStorage.setItem('biz_data', JSON.stringify(records));
+            
+            document.getElementById('desc').value = '';
+            document.getElementById('amount').value = '';
             showTab('home');
-        };
+            render();
+        }
+
+        function showTab(t) {
+            const home = t === 'home';
+            document.getElementById('homeView').classList.toggle('hidden', !home);
+            document.getElementById('addView').classList.toggle('hidden', home);
+            document.getElementById('homeTab').classList.toggle('text-blue-600', home);
+            document.getElementById('homeTab').classList.toggle('text-slate-300', !home);
+            document.getElementById('addTab').classList.toggle('text-blue-600', !home);
+            document.getElementById('addTab').classList.toggle('text-slate-300', home);
+        }
+
+        function clearData() {
+            if(confirm("සියලුම දත්ත මැකීමට ඔබට විශ්වාසද?")) {
+                localStorage.removeItem('biz_data');
+                records = [];
+                render();
+            }
+        }
+
+        // Init
+        lucide.createIcons();
+        if (localStorage.getItem('isLogged') === 'true') render();
     </script>
 </body>
 </html>
