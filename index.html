@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Business Hub Pro</title>
+    <title>Business Hub Pro - Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -15,29 +15,27 @@
 <body class="bg-slate-50">
     <div id="app" class="max-w-md mx-auto min-h-screen relative pb-28">
         
-        <!-- Login Screen -->
         <div id="loginOverlay" class="fixed inset-0 z-[100] login-bg flex items-center justify-center p-6">
             <div class="bg-white w-full rounded-[2.5rem] p-8 shadow-2xl text-center">
                 <div class="bg-blue-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <i data-lucide="lock" class="w-10 h-10 text-blue-600"></i>
+                    <i data-lucide="shield-check" class="w-10 h-10 text-blue-600"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">Business Hub</h2>
                 <p class="text-slate-400 text-sm mb-8 font-medium">කරුණාකර පිවිසෙන්න</p>
                 <div class="space-y-4 text-left">
                     <input id="uName" type="text" placeholder="පරිශීලක නාමය" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
                     <input id="uPass" type="password" placeholder="මුද්‍රා පදය" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
-                    <button id="loginBtn" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg active:scale-95 transition">ඇතුළු වන්න</button>
+                    <button id="loginBtn" onclick="handleLogin()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg active:scale-95 transition">ඇතුළු වන්න</button>
                 </div>
                 <p id="loginError" class="text-red-500 text-xs mt-4 hidden font-bold">ඇතුළත් කළ විස්තර වැරදියි!</p>
             </div>
         </div>
 
-        <!-- Main UI -->
         <div id="mainUI" class="hidden">
             <header class="bg-blue-600 p-8 rounded-b-[3rem] text-white shadow-xl">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h1 class="text-xl font-bold">BUSINESS HUB</h1>
+                        <h1 class="text-xl font-bold uppercase">Business Hub</h1>
                         <p id="userDisplay" class="text-[10px] opacity-70 font-bold uppercase tracking-widest"></p>
                     </div>
                     <button onclick="location.reload()" class="bg-white/20 p-2 rounded-xl active:scale-90 transition">
@@ -72,35 +70,58 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="adminTab" class="hidden">
+                    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border">
+                        <h2 class="text-lg font-bold mb-5 text-blue-700">නව කළමනාකරු</h2>
+                        <div class="space-y-4">
+                            <input id="newUName" type="text" placeholder="Username" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                            <input id="newUPass" type="password" placeholder="Password" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                            <button onclick="addUser()" class="w-full bg-slate-800 text-white p-4 rounded-2xl font-bold">Manager කෙනෙක් එක් කරන්න</button>
+                        </div>
+                        <div id="usersList" class="mt-6 space-y-2 border-t pt-4">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">දැනට සිටින කළමනාකරුවන්</p>
+                        </div>
+                    </div>
+                </div>
             </main>
 
-            <nav class="fixed bottom-6 left-6 right-6 max-w-sm mx-auto bg-white/90 backdrop-blur-md border border-white/50 shadow-2xl rounded-[2.5rem] p-3 flex justify-around items-center z-50">
-                <button onclick="showTab('home')" class="flex flex-col items-center text-blue-600"><i data-lucide="layout-grid" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">සාරාංශය</span></button>
-                <button onclick="showTab('add')" class="flex flex-col items-center text-slate-300"><i data-lucide="plus-circle" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">එක් කරන්න</span></button>
+            <nav id="navBar" class="fixed bottom-6 left-6 right-6 max-w-sm mx-auto bg-white/90 backdrop-blur-md border border-white/50 shadow-2xl rounded-[2.5rem] p-3 flex justify-around items-center z-50">
+                <button onclick="showTab('home')" class="nav-btn flex flex-col items-center text-blue-600" id="btnHome"><i data-lucide="layout-grid" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">සාරාංශය</span></button>
+                <button onclick="showTab('add')" class="nav-btn flex flex-col items-center text-slate-300" id="btnAdd"><i data-lucide="plus-circle" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">එක් කරන්න</span></button>
+                <button id="adminOnlyBtn" onclick="showTab('admin')" class="hidden nav-btn flex flex-col items-center text-slate-300"><i data-lucide="users" class="w-6 h-6"></i><span class="text-[8px] font-bold uppercase">ඇඩ්මින්</span></button>
             </nav>
         </div>
     </div>
 
     <script>
-        // Simple In-Memory/Local Storage Database
+        // Data Storage
         let records = JSON.parse(localStorage.getItem('my_biz_data') || '[]');
+        let users = JSON.parse(localStorage.getItem('my_biz_users') || '[{"u":"admin","p":"4321","role":"admin"}]');
+        let currentUser = null;
 
-        // Fixed Login Function
-        document.getElementById('loginBtn').addEventListener('click', function() {
+        function handleLogin() {
             const u = document.getElementById('uName').value.trim().toLowerCase();
             const p = document.getElementById('uPass').value.trim();
             const error = document.getElementById('loginError');
 
-            // Hardcoded Admin Credentials
-            if (u === 'admin' && p === '4321') {
+            const user = users.find(user => user.u === u && user.p === p);
+
+            if (user) {
+                currentUser = user;
                 document.getElementById('loginOverlay').classList.add('hidden');
                 document.getElementById('mainUI').classList.remove('hidden');
-                document.getElementById('userDisplay').innerText = "ප්‍රධාන පරිපාලක";
+                document.getElementById('userDisplay').innerText = user.role === 'admin' ? "ප්‍රධාන පරිපාලක" : `Manager: ${user.u}`;
+                
+                if(user.role === 'admin') {
+                    document.getElementById('adminOnlyBtn').classList.remove('hidden');
+                }
                 render();
+                renderUsers();
             } else {
                 error.classList.remove('hidden');
             }
-        });
+        }
 
         function saveData() {
             const b = document.getElementById('fBranch').value;
@@ -108,15 +129,23 @@
             const d = document.getElementById('fDesc').value;
             const a = parseFloat(document.getElementById('fAmount').value);
 
-            if(!d || !a) return alert("කරුණාකර සියල්ල පුරවන්න");
+            if(!d || !a) return alert("කරුණාකර විස්තරය සහ මුදල ඇතුළත් කරන්න");
 
-            records.push({ b, t, d, a, time: Date.now() });
+            records.push({ id: Date.now(), b, t, d, a });
             localStorage.setItem('my_biz_data', JSON.stringify(records));
             
             document.getElementById('fDesc').value = '';
             document.getElementById('fAmount').value = '';
             showTab('home');
             render();
+        }
+
+        function deleteRecord(id) {
+            if(confirm("මෙම දත්තය මකා දැමීමට ඔබට විශ්වාසද?")) {
+                records = records.filter(r => r.id !== id);
+                localStorage.setItem('my_biz_data', JSON.stringify(records));
+                render();
+            }
         }
 
         function render() {
@@ -127,7 +156,10 @@
                 total += isIn ? r.a : -r.a;
                 return `
                     <div class="bg-white p-4 rounded-3xl border flex justify-between items-center shadow-sm">
-                        <div><p class="text-sm font-bold">${r.b}</p><p class="text-[10px] text-slate-400">${r.d}</p></div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="deleteRecord(${r.id})" class="text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <div><p class="text-sm font-bold">${r.b}</p><p class="text-[10px] text-slate-400">${r.d}</p></div>
+                        </div>
                         <p class="font-bold ${isIn ? 'text-green-600' : 'text-red-600'}">${isIn ? '+' : '-'} ${r.a.toLocaleString()}</p>
                     </div>
                 `;
@@ -136,9 +168,44 @@
             lucide.createIcons();
         }
 
+        // Admin: User Management Functions
+        function addUser() {
+            const u = document.getElementById('newUName').value.trim().toLowerCase();
+            const p = document.getElementById('newUPass').value.trim();
+            if(!u || !p) return alert("Username සහ Password ඇතුළත් කරන්න");
+            
+            users.push({ u, p, role: 'manager' });
+            localStorage.setItem('my_biz_users', JSON.stringify(users));
+            document.getElementById('newUName').value = '';
+            document.getElementById('newUPass').value = '';
+            renderUsers();
+            alert("කළමනාකරු සාර්ථකව එක් කරන ලදී");
+        }
+
+        function renderUsers() {
+            const uList = document.getElementById('usersList');
+            uList.innerHTML = '<p class="text-[10px] font-bold text-slate-400 uppercase">දැනට සිටින කළමනාකරුවන්</p>';
+            users.filter(u => u.role !== 'admin').forEach(user => {
+                uList.innerHTML += `
+                    <div class="flex justify-between bg-slate-50 p-3 rounded-xl text-sm">
+                        <span>${user.u}</span>
+                        <span class="text-slate-400 italic">PW: ${user.p}</span>
+                    </div>
+                `;
+            });
+        }
+
         function showTab(tab) {
             document.getElementById('homeTab').classList.toggle('hidden', tab !== 'home');
             document.getElementById('addTab').classList.toggle('hidden', tab !== 'add');
+            document.getElementById('adminTab').classList.toggle('hidden', tab !== 'admin');
+            
+            // Update UI Icons Color
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-blue-600', 'text-slate-300'));
+            if(tab === 'home') document.getElementById('btnHome').classList.replace('text-slate-300', 'text-blue-600');
+            if(tab === 'add') document.getElementById('btnAdd').classList.replace('text-slate-300', 'text-blue-600');
+            if(tab === 'admin') document.getElementById('adminOnlyBtn').classList.replace('text-slate-300', 'text-blue-600');
+            lucide.createIcons();
         }
 
         lucide.createIcons();
