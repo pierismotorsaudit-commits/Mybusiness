@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const config = JSON.parse(window.__firebase_config || '{}');
+        const appId = window.__app_id || 'business-2026';
+        
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const BRANCHES = ["පරගම්මන ශොප්", "රන්වල බයික් ශොප්", "රන්වල ත්‍රීවීල් ශොප්", "කෑගල්ල ශොප්", "හෙල්මට් ශොප්", "කෑගල්ල වර්ක් ශොප්", "පරගම්මන වර්ක් ශොප්", "කුෂන් වැඩපොළ"];
+
+        const App = () => {
+            const [isLogged, setIsLogged] = useState(false);
+            const [user, setUser] = useState(null);
+            const [tab, setTab] = useState('home');
+            const [records, setRecords] = useState([]);
+            const [form, setForm] = useState({ u: '', p: '' });
+
+            useEffect(() => {
+                signInAnonymously(auth);
+                onAuthStateChanged(auth, setUser);
+            }, []);
+
+            useEffect(() => {
+                if (!user || !isLogged) return;
+                const q = collection(db, 'artifacts', appId, 'public', 'data', 'records');
+                return onSnapshot(q, (s) => {
+                    setRecords(s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.t - a.t));
+                });
+            }, [user, isLogged]);
+
+            const login = (e) => {
+                e.preventDefault();
+                if(form.u === 'admin' && form.p === '123') setIsLogged(true);
+                else alert("වැරදියි!");
+            };
+
+            const save = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'records'), {
+                    b: fd.get('b'), type: fd.get('type'), d: fd.get('d'), a: parseFloat(fd.get('a')), t: Date.now()
+                });
+                e.target.reset();
+                setTab('home');
+            };
+
+            if(!isLogged) return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6">
+                    <form onSubmit={login} className="bg-white p-8 rounded-3xl w-full max-w-sm">
+                        <h2 className="text-xl font-bold mb-4">Login</h2>
+                        <input type="text" placeholder="Username" className="w-full p-4 border rounded-xl mb-3" onChange={e => setForm({...form, u: e.target.value})} />
+                        <input type="password" placeholder="Password" className="w-full p-4 border rounded-xl mb-4" onChange={e => setForm({...form, p: e.target.value})} />
+                        <button className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold">Login</button>
+                    </form>
+                </div>
+            );
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-20">
+                    <div className="bg-blue-600 p-6 text-white rounded-b-3xl shadow-lg">
+                        <h1 className="font-bold">Business Manager</h1>
+                    </div>
+                    <div className="p-4 space-y-4">
+                        {tab === 'home' ? (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-green-500">
+                                        <p className="text-xs text-gray-400">INCOME</p>
+                                        <p className="text-lg font-bold">රු. {records.filter(r => r.type === 'in').reduce((s,r) => s + r.a, 0)}</p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-red-500">
+                                        <p className="text-xs text-gray-400">EXPENSE</p>
+                                        <p className="text-lg font-bold">රු. {records.filter(r => r.type === 'out').reduce((s,r) => s + r.a, 0)}</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-2xl p-4 shadow-sm border">
+                                    <h3 className="font-bold mb-2">Recent Records</h3>
+                                    {records.map(r => (
+                                        <div key={r.id} className="flex justify-between py-2 border-b text-sm">
+                                            <span><b>{r.b}</b><br/><small>{r.d}</small></span>
+                                            <span className={r.type === 'in' ? 'text-green-600' : 'text-red-600'}>{r.type === 'in' ? '+' : '-'} {r.a}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <form onSubmit={save} className="bg-white p-6 rounded-3xl shadow border space-y-4">
+                                <select name="b" className="w-full p-3 border rounded-xl">{BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}</select>
+                                <select name="type" className="w-full p-3 border rounded-xl"><option value="in">Income</option><option value="out">Expense</option></select>
+                                <input name="d" placeholder="Description" className="w-full p-3 border rounded-xl" required />
+                                <input name="a" type="number" placeholder="Amount" className="w-full p-3 border rounded-xl" required />
+                                <button className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold">Save</button>
+                            </form>
+                        )}
+                    </div>
+                    <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 flex justify-around max-w-md mx-auto">
+                        <button onClick={() => setTab('home')} className={tab === 'home' ? 'text-blue-600' : 'text-gray-400'}><i data-lucide="home"></i></button>
+                        <button onClick={() => setTab('add')} className={tab === 'add' ? 'text-blue-600' : 'text-gray-400'}><i data-lucide="plus"></i></button>
+                    </div>
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+        setInterval(() => lucide.createIcons(), 1000);
+    </script>
+</body>
+</html>
