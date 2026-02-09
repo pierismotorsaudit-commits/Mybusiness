@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Business Hub Pro - Multi Branch</title>
+    <title>Business Hub Pro - Saman Yapa Bandara</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -64,39 +64,37 @@
 
             <main class="p-4">
                 <div id="homeTab">
-                    <div class="flex justify-between items-center mb-4 px-2">
-                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ශාඛා අනුව සාරාංශය</h3>
-                    </div>
-                    
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-4">ශාඛා අනුව සාරාංශය</h3>
                     <div id="branchSummary" class="space-y-3 mb-8"></div>
 
                     <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-4">මෑත ගනුදෙනු</h3>
-                    <div id="recordsList" class="space-y-2"></div>
+                    <div id="recordsList" class="space-y-2 mb-10"></div>
+                    
+                    <div class="text-center py-6 border-t mt-4">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Saman Yapa Bandara ගේ නිර්මාණයක්</p>
+                    </div>
                 </div>
 
                 <div id="addTab" class="hidden">
                     <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border">
                         <h2 class="text-lg font-bold mb-5">නව දත්තයක්</h2>
                         <div class="space-y-4">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">ස්ථානය තෝරන්න</label>
-                            <select id="fBranch" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none appearance-none">
-                                <option>පරගම්මන ශොප්</option>
-                                <option>පරගම්මන වැඩපොළ</option>
-                                <option>නෙලුන්දෙනිය ශොප්</option>
-                                <option>හෙල්මට් ශොප්</option>
-                                <option>කෑගල්ල ශොප්</option>
-                                <option>කෑගල්ල වැඩපොළ</option>
-                                <option>කුෂන් වැඩපොළ</option>
-                                <option>රන්වල බයික්</option>
-                                <option>රන්වල ත්‍රීවීල්</option>
+                            <div class="bg-slate-50 p-4 rounded-2xl border flex justify-between items-center">
+                                <span class="text-xs font-bold text-slate-500 uppercase">දිනය:</span>
+                                <span id="currentDateDisplay" class="text-sm font-bold text-blue-600"></span>
+                            </div>
+                            <select id="fBranch" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                                <option>පරගම්මන ශොප්</option><option>පරගම්මන වැඩපොළ</option><option>නෙලුන්දෙනිය ශොප්</option>
+                                <option>හෙල්මට් ශොප්</option><option>කෑගල්ල ශොප්</option><option>කෑගල්ල වැඩපොළ</option>
+                                <option>කුෂන් වැඩපොළ</option><option>රන්වල බයික්</option><option>රන්වල ත්‍රීවීල්</option>
                             </select>
                             <div class="flex gap-2">
                                 <button onclick="setRecType('in')" id="btnIn" class="flex-1 p-4 rounded-2xl font-bold border-2 border-green-500 bg-green-50 text-green-600">ආදායම</button>
                                 <button onclick="setRecType('out')" id="btnOut" class="flex-1 p-4 rounded-2xl font-bold border-2 border-transparent bg-slate-50 text-slate-400">වියදම</button>
                             </div>
-                            <input id="fDesc" type="text" placeholder="විස්තරය (උදා: විකුණුම්)" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                            <input id="fDesc" type="text" placeholder="විස්තරය" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
                             <input id="fAmount" type="number" placeholder="මුදල (රු.)" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none text-xl font-bold text-blue-600">
-                            <button onclick="saveData()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg active:bg-blue-700 transition">දත්තය සුරකින්න</button>
+                            <button onclick="saveData()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg">දත්තය සුරකින්න</button>
                         </div>
                     </div>
                 </div>
@@ -123,7 +121,7 @@
     </div>
 
     <script>
-        let records = JSON.parse(localStorage.getItem('biz_v2_data') || '[]');
+        let records = JSON.parse(localStorage.getItem('biz_v3_data') || '[]');
         let users = JSON.parse(localStorage.getItem('biz_v2_users') || '[{"u":"admin","p":"4321","role":"admin"}]');
         let currentType = 'in';
         let currentUser = null;
@@ -145,6 +143,7 @@
                 document.getElementById('mainUI').classList.remove('hidden');
                 document.getElementById('userDisplay').innerText = user.role === 'admin' ? "ප්‍රධාන පරිපාලක" : `Manager: ${user.u}`;
                 if(user.role === 'admin') document.getElementById('adminOnlyBtn').classList.remove('hidden');
+                document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString();
                 render();
                 renderUsers();
             } else {
@@ -162,11 +161,12 @@
             const b = document.getElementById('fBranch').value;
             const d = document.getElementById('fDesc').value;
             const a = parseFloat(document.getElementById('fAmount').value);
+            const date = new Date().toLocaleDateString();
 
             if(!d || !a) return alert("කරුණාකර සියල්ල පුරවන්න");
 
-            records.push({ id: Date.now(), b, t: currentType, d, a, user: currentUser.u });
-            localStorage.setItem('biz_v2_data', JSON.stringify(records));
+            records.push({ id: Date.now(), b, t: currentType, d, a, date, user: currentUser.u });
+            localStorage.setItem('biz_v3_data', JSON.stringify(records));
             
             document.getElementById('fDesc').value = '';
             document.getElementById('fAmount').value = '';
@@ -177,7 +177,7 @@
         function deleteRecord(id) {
             if(confirm("මෙම ගනුදෙනුව මකා දැමීමට ඔබට විශ්වාසද?")) {
                 records = records.filter(r => r.id !== id);
-                localStorage.setItem('biz_v2_data', JSON.stringify(records));
+                localStorage.setItem('biz_v3_data', JSON.stringify(records));
                 render();
             }
         }
@@ -187,27 +187,19 @@
             const branchData = {};
             branches.forEach(br => branchData[br] = { in: 0, out: 0 });
 
-            // Calculate totals
             records.forEach(r => {
-                if(r.t === 'in') {
-                    branchData[r.b].in += r.a;
-                    grandIn += r.a;
-                } else {
-                    branchData[r.b].out += r.a;
-                    grandOut += r.a;
-                }
+                if(r.t === 'in') { branchData[r.b].in += r.a; grandIn += r.a; }
+                else { branchData[r.b].out += r.a; grandOut += r.a; }
             });
 
-            // Update Header
             document.getElementById('totalIn').innerText = 'රු. ' + grandIn.toLocaleString();
             document.getElementById('totalOut').innerText = 'රු. ' + grandOut.toLocaleString();
             document.getElementById('netTotal').innerText = 'රු. ' + (grandIn - grandOut).toLocaleString();
 
-            // Render Branch Summary
             const bSummary = document.getElementById('branchSummary');
             bSummary.innerHTML = branches.map(br => {
                 const profit = branchData[br].in - branchData[br].out;
-                if(branchData[br].in === 0 && branchData[br].out === 0) return ''; // Skip empty
+                if(branchData[br].in === 0 && branchData[br].out === 0) return '';
                 return `
                     <div class="bg-white p-4 rounded-[2rem] border shadow-sm card-grad">
                         <p class="text-[11px] font-bold text-blue-600 uppercase mb-2 ml-1">${br}</p>
@@ -220,13 +212,15 @@
                 `;
             }).join('');
 
-            // Render Recent Records
             const list = document.getElementById('recordsList');
-            list.innerHTML = records.slice(-10).reverse().map(r => `
+            list.innerHTML = records.slice().reverse().map(r => `
                 <div class="bg-white p-3 rounded-2xl border flex justify-between items-center text-xs">
                     <div class="flex items-center gap-2">
                         <button onclick="deleteRecord(${r.id})" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        <div><p class="font-bold text-slate-700">${r.b}</p><p class="text-[9px] text-slate-400">${r.d}</p></div>
+                        <div>
+                            <p class="font-bold text-slate-700">${r.b} <span class="text-[9px] font-normal text-slate-400">| ${r.date}</span></p>
+                            <p class="text-[9px] text-slate-400">${r.d}</p>
+                        </div>
                     </div>
                     <p class="font-bold ${r.t === 'in' ? 'text-green-600' : 'text-red-500'}">${r.t === 'in' ? '+' : '-'} ${r.a.toLocaleString()}</p>
                 </div>
@@ -235,28 +229,20 @@
             lucide.createIcons();
         }
 
-        // Admin Management
         function addUser() {
             const u = document.getElementById('newUName').value.trim().toLowerCase();
             const p = document.getElementById('newUPass').value.trim();
             if(!u || !p) return alert("විස්තර පුරවන්න");
             users.push({ u, p, role: 'manager' });
             localStorage.setItem('biz_v2_users', JSON.stringify(users));
-            document.getElementById('newUName').value = '';
-            document.getElementById('newUPass').value = '';
             renderUsers();
         }
 
         function renderUsers() {
             const uList = document.getElementById('usersList');
-            uList.innerHTML = '<p class="text-[10px] font-bold text-slate-400 uppercase mb-3">දැනට සිටින කළමනාකරුවන්</p>';
+            uList.innerHTML = '<p class="text-[10px] font-bold text-slate-400 uppercase mb-3">කළමනාකරුවන්</p>';
             users.forEach(user => {
-                uList.innerHTML += `
-                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-2xl mb-2">
-                        <div class="flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-slate-400"></i><span class="font-bold text-slate-700">${user.u}</span></div>
-                        <span class="text-[10px] bg-white px-2 py-1 rounded-lg border text-slate-500 font-mono">${user.p}</span>
-                    </div>
-                `;
+                uList.innerHTML += `<div class="flex justify-between items-center bg-slate-50 p-3 rounded-2xl mb-2"><span class="font-bold text-slate-700">${user.u}</span><span class="text-[10px] text-slate-500">${user.p}</span></div>`;
             });
             lucide.createIcons();
         }
@@ -265,11 +251,6 @@
             document.getElementById('homeTab').classList.toggle('hidden', tab !== 'home');
             document.getElementById('addTab').classList.toggle('hidden', tab !== 'add');
             document.getElementById('adminTab').classList.toggle('hidden', tab !== 'admin');
-            
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-blue-600', 'text-slate-300'));
-            if(tab === 'home') document.getElementById('btnHome').classList.replace('text-slate-300', 'text-blue-600');
-            if(tab === 'add') document.getElementById('btnAdd').classList.replace('text-slate-300', 'text-blue-600');
-            if(tab === 'admin') document.getElementById('adminOnlyBtn').classList.replace('text-slate-300', 'text-blue-600');
             lucide.createIcons();
         }
 
