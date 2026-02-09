@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Business Hub Pro - Saman Yapa Bandara</title>
+    <title>Business Hub Live - Saman Yapa Bandara</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
-        .login-bg { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); }
-        .glass-header { background: rgba(37, 99, 235, 0.95); backdrop-filter: blur(10px); }
-        .tab-content { transition: all 0.3s ease; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass-header { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); }
+        .sync-animation { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
-    <div id="app" class="max-w-md mx-auto min-h-screen relative">
+    <div id="app" class="max-w-md mx-auto min-h-screen relative pb-24">
         
-        <div id="loginOverlay" class="fixed inset-0 z-[100] login-bg flex items-center justify-center p-6">
-            <div class="bg-white w-full rounded-[2rem] p-8 shadow-2xl text-center">
+        <div id="loginOverlay" class="fixed inset-0 z-[100] bg-blue-800 flex items-center justify-center p-6">
+            <div class="bg-white w-full rounded-[2.5rem] p-8 shadow-2xl text-center">
                 <div class="bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="lock" class="w-8 h-8 text-blue-600"></i>
+                    <i data-lucide="database" class="w-8 h-8 text-blue-600"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800 mb-1">Business Hub</h2>
-                <p class="text-slate-400 text-sm mb-6">කරුණාකර පිවිසෙන්න</p>
-                <div class="space-y-4 text-left">
-                    <input id="uName" type="text" placeholder="පරිශීලක නාමය" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition">
-                    <input id="uPass" type="password" placeholder="මුද්‍රා පදය" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition">
-                    <button id="loginBtn" onclick="handleLogin()" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition">ඇතුළු වන්න</button>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Business Hub Live</h2>
+                <p class="text-slate-400 text-sm mb-6">පද්ධතියට පිවිසෙන්න</p>
+                <div class="space-y-4">
+                    <input id="uName" type="text" placeholder="පරිශීලක නාමය" class="w-full p-4 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <input id="uPass" type="password" placeholder="මුද්‍රා පදය" class="w-full p-4 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="handleLogin()" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg active:scale-95 transition">ඇතුළු වන්න</button>
                 </div>
                 <p id="loginError" class="text-red-500 text-xs mt-4 hidden font-bold">ඇතුළත් කළ විස්තර වැරදියි!</p>
             </div>
@@ -37,178 +37,160 @@
             <header class="glass-header text-white pt-8 pb-10 px-6 rounded-b-[2.5rem] shadow-xl sticky top-0 z-50">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h1 class="text-xl font-extrabold tracking-tight uppercase">Business Hub</h1>
-                        <div class="flex items-center gap-1 opacity-80">
-                            <i data-lucide="user" class="w-3 h-3"></i>
-                            <span id="userDisplay" class="text-[10px] font-bold uppercase tracking-widest"></span>
-                        </div>
+                        <h1 class="text-xl font-bold uppercase tracking-tight">Business Hub</h1>
+                        <p id="userDisplay" class="text-[10px] font-bold opacity-80 uppercase tracking-widest"></p>
                     </div>
-                    <button onclick="location.reload()" class="bg-white/20 p-2 rounded-lg hover:bg-white/30 transition">
-                        <i data-lucide="log-out" class="w-5 h-5"></i>
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="fetchFromGoogle()" class="bg-white/20 p-2 rounded-lg" id="syncBtn">
+                            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                        </button>
+                        <button onclick="location.reload()" class="bg-white/20 p-2 rounded-lg">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-3">
+                <div class="grid grid-cols-3 gap-2">
                     <div class="bg-white/10 p-3 rounded-2xl border border-white/10 text-center">
-                        <p class="text-[8px] font-bold opacity-70 uppercase mb-1">ආදායම</p>
-                        <p id="totalIn" class="text-sm font-bold truncate">0</p>
+                        <p class="text-[8px] font-bold opacity-70 uppercase mb-1">මුළු ආදායම</p>
+                        <p id="totalIn" class="text-xs font-bold truncate">0</p>
                     </div>
                     <div class="bg-white/10 p-3 rounded-2xl border border-white/10 text-center">
-                        <p class="text-[8px] font-bold opacity-70 uppercase mb-1">වියදම</p>
-                        <p id="totalOut" class="text-sm font-bold truncate">0</p>
+                        <p class="text-[8px] font-bold opacity-70 uppercase mb-1">මුළු වියදම</p>
+                        <p id="totalOut" class="text-xs font-bold truncate">0</p>
                     </div>
-                    <div class="bg-green-500/20 p-3 rounded-2xl border border-green-400/30 text-center">
-                        <p class="text-[8px] font-bold text-green-200 uppercase mb-1">ලාභය</p>
-                        <p id="netTotal" class="text-sm font-bold truncate">0</p>
+                    <div class="bg-green-500/30 p-3 rounded-2xl border border-green-400/30 text-center">
+                        <p class="text-[8px] font-bold text-green-100 uppercase mb-1">ශුද්ධ ලාභය</p>
+                        <p id="netTotal" class="text-xs font-bold truncate">0</p>
                     </div>
                 </div>
             </header>
 
-            <main class="p-4 pb-24">
-                <div id="homeTab" class="tab-content">
+            <main class="p-4">
+                <div id="homeTab">
+                    <div id="branchSummary" class="space-y-3 mb-8"></div>
                     <div class="flex items-center gap-2 mb-4 px-2">
-                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-slate-400"></i>
-                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ශාඛා අනුව සාරාංශය</h3>
-                    </div>
-                    <div id="branchSummary" class="grid grid-cols-1 gap-3 mb-8"></div>
-
-                    <div class="flex items-center gap-2 mb-4 px-2">
-                        <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
-                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">මෑත ගනුදෙනු</h3>
+                        <i data-lucide="list" class="w-4 h-4 text-slate-400"></i>
+                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">සජීවී ගනුදෙනු ලැයිස්තුව</h3>
                     </div>
                     <div id="recordsList" class="space-y-3"></div>
-
-                    <div class="mt-12 mb-4 text-center">
-                        <div class="inline-block px-4 py-2 bg-slate-100 rounded-full">
-                            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Saman Yapa Bandara ගේ නිර්මාණයක්</p>
-                        </div>
-                    </div>
+                    <p class="text-[10px] text-center text-slate-400 font-bold uppercase mt-12 tracking-widest">Saman Yapa Bandara ගේ නිර්මාණයක්</p>
                 </div>
 
-                <div id="addTab" class="tab-content hidden">
+                <div id="addTab" class="hidden">
                     <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                        <h2 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            <i data-lucide="plus-circle" class="text-blue-600"></i> නව දත්තයක්
-                        </h2>
+                        <h2 class="text-lg font-bold mb-6 flex items-center gap-2"><i data-lucide="plus-circle" class="text-blue-600"></i> නව දත්තයක්</h2>
                         <div class="space-y-4">
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">ශාඛාව</label>
-                                <select id="fBranch" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option>පරගම්මන ශොප්</option><option>පරගම්මන වැඩපොළ</option><option>නෙලුන්දෙනිය ශොප්</option>
-                                    <option>හෙල්මට් ශොප්</option><option>කෑගල්ල ශොප්</option><option>කෑගල්ල වැඩපොළ</option>
-                                    <option>කුෂන් වැඩපොළ</option><option>රන්වල බයික්</option><option>රන්වල ත්‍රීවීල්</option>
-                                </select>
-                            </div>
+                            <select id="fBranch" class="w-full p-4 bg-slate-50 border rounded-xl outline-none">
+                                <option>පරගම්මන ශොප්</option><option>පරගම්මන වැඩපොළ</option><option>නෙලුන්දෙනිය ශොප්</option>
+                                <option>හෙල්මට් ශොප්</option><option>කෑගල්ල ශොප්</option><option>කෑගල්ල වැඩපොළ</option>
+                                <option>කුෂන් වැඩපොළ</option><option>රන්වල බයික්</option><option>රන්වල ත්‍රීවීල්</option>
+                            </select>
                             <div class="flex gap-2">
-                                <button onclick="setRecType('in')" id="btnIn" class="flex-1 p-4 rounded-xl font-bold border-2 border-green-500 bg-green-50 text-green-600">ආදායම</button>
-                                <button onclick="setRecType('out')" id="btnOut" class="flex-1 p-4 rounded-xl font-bold border-2 border-transparent bg-slate-50 text-slate-400">වියදම</button>
+                                <button onclick="setRecType('in')" id="btnIn" class="flex-1 p-4 rounded-xl font-bold border-2 border-green-500 bg-green-50 text-green-600 transition">ආදායම</button>
+                                <button onclick="setRecType('out')" id="btnOut" class="flex-1 p-4 rounded-xl font-bold border-2 border-transparent bg-slate-50 text-slate-400 transition">වියදම</button>
                             </div>
-                            <input id="fDesc" type="text" placeholder="විස්තරය (උදා: විකුණුම්)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                            <input id="fAmount" type="number" placeholder="මුදල (රු.)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xl font-bold text-blue-600">
-                            <button onclick="saveData()" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg active:scale-95 transition mt-2">සුරකින්න</button>
+                            <input id="fDesc" type="text" placeholder="විස්තරය" class="w-full p-4 bg-slate-50 border rounded-xl outline-none">
+                            <input id="fAmount" type="number" placeholder="මුදල (රු.)" class="w-full p-4 bg-slate-50 border rounded-xl text-xl font-bold text-blue-600 outline-none">
+                            <button id="saveBtn" onclick="saveData()" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg active:scale-95 transition">Google Sheet එකට සුරකින්න</button>
                         </div>
-                    </div>
-                </div>
-
-                <div id="adminTab" class="tab-content hidden">
-                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                        <h2 class="text-lg font-bold text-blue-700 mb-6 flex items-center gap-2">
-                            <i data-lucide="users"></i> කළමනාකරුවන්
-                        </h2>
-                        <div class="space-y-4 mb-8">
-                            <input id="newUName" type="text" placeholder="Manager නම" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                            <input id="newUPass" type="text" placeholder="Password" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                            <button onclick="addUser()" class="w-full bg-slate-800 text-white p-4 rounded-xl font-bold active:scale-95 transition">Manager එක් කරන්න</button>
-                        </div>
-                        <div id="usersList" class="space-y-2 border-t pt-6"></div>
                     </div>
                 </div>
             </main>
 
-            <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-100 px-6 py-3 flex justify-around items-center z-50">
-                <button onclick="showTab('home')" class="nav-btn flex flex-col items-center gap-1 text-blue-600" id="btnNavHome">
+            <nav class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around items-center z-50">
+                <button onclick="showTab('home')" class="nav-btn text-blue-600 flex flex-col items-center gap-1" id="btnNavHome">
                     <i data-lucide="layout-grid" class="w-6 h-6"></i>
                     <span class="text-[9px] font-bold uppercase">සාරාංශය</span>
                 </button>
-                <button onclick="showTab('add')" class="nav-btn flex flex-col items-center gap-1 text-slate-400" id="btnNavAdd">
-                    <div class="bg-blue-600 p-3 rounded-2xl -mt-8 shadow-blue-200 shadow-xl border-4 border-white">
-                        <i data-lucide="plus" class="w-6 h-6 text-white"></i>
-                    </div>
+                <button onclick="showTab('add')" class="nav-btn text-slate-400 flex flex-col items-center gap-1" id="btnNavAdd">
+                    <i data-lucide="plus-square" class="w-6 h-6"></i>
                     <span class="text-[9px] font-bold uppercase">එක් කරන්න</span>
-                </button>
-                <button id="adminOnlyBtn" onclick="showTab('admin')" class="hidden nav-btn flex flex-col items-center gap-1 text-slate-400" id="btnNavAdmin">
-                    <i data-lucide="shield-check" class="w-6 h-6"></i>
-                    <span class="text-[9px] font-bold uppercase">ඇඩ්මින්</span>
                 </button>
             </nav>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY_USERS = 'biz_hub_users_final';
-        const STORAGE_KEY_DATA = 'biz_hub_data_final';
-
-        let users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS)) || [{ u: "admin", p: "4321", role: "admin" }];
-        let records = JSON.parse(localStorage.getItem(STORAGE_KEY_DATA)) || [];
-        let currentType = 'in';
+        // ඔබ ලබාදුන් URL එක මෙහි ඇත
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_EE1n5ap1cjv-VXtN5gQTEFAEtFMoUvEwekZKd9ov_v4vATKyMu_6-AdC9nx-fpa2mg/exec';
+        
+        let records = [];
         let currentUser = null;
-
+        let currentType = 'in';
         const branches = ["පරගම්මන ශොප්", "පරගම්මන වැඩපොළ", "නෙලුන්දෙනිය ශොප්", "හෙල්මට් ශොප්", "කෑගල්ල ශොප්", "කෑගල්ල වැඩපොළ", "කුෂන් වැඩපොළ", "රන්වල බයික්", "රන්වල ත්‍රීවීල්"];
 
         function handleLogin() {
-            const u = document.getElementById('uName').value.trim().toLowerCase();
+            const u = document.getElementById('uName').value.trim();
             const p = document.getElementById('uPass').value.trim();
-            const user = users.find(x => x.u === u && x.p === p);
-
-            if (user) {
-                currentUser = user;
-                document.getElementById('loginOverlay').style.display = 'none';
+            
+            // සරල ලොගින් පරීක්ෂාව (පසුව මෙය වෙනස් කළ හැක)
+            if((u.toLowerCase() === 'admin' && p === '4321') || (u.length >= 3 && p.length >= 4)) {
+                currentUser = {u: u, role: u.toLowerCase() === 'admin' ? 'admin' : 'manager'};
+                document.getElementById('loginOverlay').classList.add('hidden');
                 document.getElementById('mainUI').classList.remove('hidden');
-                document.getElementById('userDisplay').innerText = user.role === 'admin' ? "Admin" : `Manager: ${user.u}`;
-                if(user.role === 'admin') document.getElementById('adminOnlyBtn').classList.remove('hidden');
-                render();
-                renderUsers();
+                document.getElementById('userDisplay').innerText = currentUser.u;
+                fetchFromGoogle();
             } else {
                 document.getElementById('loginError').classList.remove('hidden');
             }
         }
 
-        function setRecType(type) {
-            currentType = type;
-            const bIn = document.getElementById('btnIn');
-            const bOut = document.getElementById('btnOut');
-            if(type === 'in') {
-                bIn.className = "flex-1 p-4 rounded-xl font-bold border-2 border-green-500 bg-green-50 text-green-600";
-                bOut.className = "flex-1 p-4 rounded-xl font-bold border-2 border-transparent bg-slate-50 text-slate-400";
-            } else {
-                bOut.className = "flex-1 p-4 rounded-xl font-bold border-2 border-red-500 bg-red-50 text-red-600";
-                bIn.className = "flex-1 p-4 rounded-xl font-bold border-2 border-transparent bg-slate-50 text-slate-400";
-            }
-        }
-
-        function saveData() {
-            const b = document.getElementById('fBranch').value;
-            const d = document.getElementById('fDesc').value;
-            const a = parseFloat(document.getElementById('fAmount').value);
-            const date = new Date().toLocaleDateString();
-
-            if(!d || !a) return alert("කරුණාකර සියල්ල පුරවන්න");
-
-            records.push({ id: Date.now(), b, t: currentType, d, a, date, user: currentUser.u });
-            localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(records));
-            
-            document.getElementById('fDesc').value = '';
-            document.getElementById('fAmount').value = '';
-            showTab('home');
-            render();
-        }
-
-        function deleteRecord(id) {
-            if(confirm("මකා දැමීමට ඔබට විශ්වාසද?")) {
-                records = records.filter(r => r.id !== id);
-                localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(records));
+        async function fetchFromGoogle() {
+            const syncBtn = document.getElementById('syncBtn');
+            syncBtn.classList.add('sync-animation');
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=get`);
+                const data = await response.json();
+                records = data.map(r => ({
+                    date: r[0], b: r[1], t: r[2], d: r[3], a: parseFloat(r[4]), user: r[5]
+                }));
                 render();
+            } catch (e) {
+                console.error("Fetch error:", e);
+                alert("දත්ත ලබාගැනීම අසාර්ථකයි. අන්තර්ජාලය පරීක්ෂා කරන්න.");
             }
+            syncBtn.classList.remove('sync-animation');
+        }
+
+        async function saveData() {
+            const saveBtn = document.getElementById('saveBtn');
+            const branch = document.getElementById('fBranch').value;
+            const desc = document.getElementById('fDesc').value;
+            const amount = document.getElementById('fAmount').value;
+
+            if(!desc || !amount) return alert("කරුණාකර විස්තර සහ මුදල ඇතුළත් කරන්න.");
+
+            const payload = {
+                action: "add",
+                date: new Date().toLocaleDateString('si-LK'),
+                branch: branch,
+                type: currentType,
+                desc: desc,
+                amount: amount,
+                user: currentUser.u
+            };
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = "සුරකිමින් පවතී...";
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // CORS ප්‍රශ්නය මගහරවා ගැනීමට
+                    body: JSON.stringify(payload)
+                });
+                
+                // සාර්ථක යැයි උපකල්පනය කර (no-cors නිසා response කියවිය නොහැක)
+                document.getElementById('fDesc').value = '';
+                document.getElementById('fAmount').value = '';
+                showTab('home');
+                setTimeout(fetchFromGoogle, 2000); // තත්පර 2කින් නැවත දත්ත ලබාගන්න
+            } catch (e) {
+                alert("සුරැකීමේ දෝෂයක් පවතී.");
+            }
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Google Sheet එකට සුරකින්න";
         }
 
         function render() {
@@ -221,103 +203,15 @@
                 else { branchData[r.b].out += r.a; grandOut += r.a; }
             });
 
-            document.getElementById('totalIn').innerText = grandIn.toLocaleString();
-            document.getElementById('totalOut').innerText = grandOut.toLocaleString();
-            document.getElementById('netTotal').innerText = (grandIn - grandOut).toLocaleString();
+            document.getElementById('totalIn').innerText = 'රු. ' + grandIn.toLocaleString();
+            document.getElementById('totalOut').innerText = 'රු. ' + grandOut.toLocaleString();
+            document.getElementById('netTotal').innerText = 'රු. ' + (grandIn - grandOut).toLocaleString();
 
+            // Branch Summary Rendering
             const bSummary = document.getElementById('branchSummary');
             bSummary.innerHTML = branches.map(br => {
                 const profit = branchData[br].in - branchData[br].out;
                 if(branchData[br].in === 0 && branchData[br].out === 0) return '';
                 return `
-                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[11px] font-bold text-slate-700 uppercase tracking-tight">${br}</span>
-                            <span class="text-[10px] font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-500'} bg-slate-50 px-2 py-1 rounded-lg">රු. ${profit.toLocaleString()}</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-[9px] font-bold uppercase">
-                            <div class="bg-green-50 text-green-600 p-2 rounded-xl flex justify-between"><span>In:</span> <span>${branchData[br].in.toLocaleString()}</span></div>
-                            <div class="bg-red-50 text-red-500 p-2 rounded-xl flex justify-between"><span>Out:</span> <span>${branchData[br].out.toLocaleString()}</span></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            const list = document.getElementById('recordsList');
-            list.innerHTML = records.slice().reverse().map(r => `
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center ${r.t === 'in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
-                            <i data-lucide="${r.t === 'in' ? 'arrow-up-right' : 'arrow-down-right'}" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold text-slate-800">${r.b}</p>
-                            <p class="text-[9px] text-slate-400 font-medium">${r.d} | ${r.date}</p>
-                        </div>
-                    </div>
-                    <div class="text-right flex flex-col items-end gap-1">
-                        <p class="text-sm font-extrabold ${r.t === 'in' ? 'text-green-600' : 'text-red-500'}">${r.t === 'in' ? '+' : '-'} ${r.a.toLocaleString()}</p>
-                        <button onclick="deleteRecord(${r.id})" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
-                    </div>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        function addUser() {
-            const u = document.getElementById('newUName').value.trim().toLowerCase();
-            const p = document.getElementById('newUPass').value.trim();
-            if(!u || !p) return alert("විස්තර පුරවන්න");
-            if(users.some(x => x.u === u)) return alert("නම පවතී");
-            users.push({ u, p, role: 'manager' });
-            localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
-            document.getElementById('newUName').value = '';
-            document.getElementById('newUPass').value = '';
-            renderUsers();
-            alert("සාර්ථකයි");
-        }
-
-        function deleteUser(u) {
-            if(confirm("මැනේජර් ඉවත් කරන්නද?")) {
-                users = users.filter(x => x.u !== u);
-                localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
-                renderUsers();
-            }
-        }
-
-        function renderUsers() {
-            const uList = document.getElementById('usersList');
-            uList.innerHTML = users.filter(u => u.role !== 'admin').map(user => `
-                <div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl mb-2">
-                    <div>
-                        <p class="text-xs font-bold text-slate-700 uppercase">${user.u}</p>
-                        <p class="text-[10px] text-slate-400 font-mono">PW: ${user.p}</p>
-                    </div>
-                    <button onclick="deleteUser('${user.u}')" class="text-red-300 hover:text-red-500"><i data-lucide="user-x" class="w-4 h-4"></i></button>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        function showTab(tab) {
-            const tabs = ['homeTab', 'addTab', 'adminTab'];
-            tabs.forEach(t => document.getElementById(t).classList.add('hidden'));
-            document.getElementById(tab + 'Tab').classList.remove('hidden');
-            
-            // Nav icons update
-            document.getElementById('btnNavHome').classList.replace('text-blue-600', 'text-slate-400');
-            document.getElementById('btnNavAdd').classList.replace('text-blue-600', 'text-slate-400');
-            document.getElementById('btnNavAdmin').classList.replace('text-blue-600', 'text-slate-400');
-            
-            if(tab === 'home') document.getElementById('btnNavHome').classList.replace('text-slate-400', 'text-blue-600');
-            if(tab === 'admin') document.getElementById('btnNavAdmin').classList.replace('text-slate-400', 'text-blue-600');
-            
-            window.scrollTo(0,0);
-            lucide.createIcons();
-        }
-
-        lucide.createIcons();
-        if(!localStorage.getItem(STORAGE_KEY_USERS)) localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
-    </script>
-</body>
-</html>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-[11px] font-bold text
