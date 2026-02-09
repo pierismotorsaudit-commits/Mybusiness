@@ -1,253 +1,265 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, query, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { LayoutGrid, PlusCircle, LogOut, UserPlus, Users, Trash2, ArrowUpRight, ArrowDownRight, ShieldCheck, Lock } from 'lucide-react';
-
-// Firebase configuration from environment
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'business-audit-system';
-
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUserData, setCurrentUserData] = useState(null);
-  const [tab, setTab] = useState('home');
-  const [records, setRecords] = useState([]);
-  const [staff, setStaff] = useState([]);
-  const [loginForm, setLoginForm] = useState({ u: '', p: '' });
-  const [newStaff, setNewStaff] = useState({ name: '', u: '', p: '' });
-
-  // 1. Auth & Initial Setup
-  useEffect(() => {
-    const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        await signInAnonymously(auth);
-      }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
-
-  // 2. Data Fetching (Records & Staff)
-  useEffect(() => {
-    if (!user) return;
-
-    // Listen to Transactions
-    const qRecords = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
-    const unsubRecords = onSnapshot(qRecords, (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setRecords(data.sort((a, b) => b.time - a.time));
-    }, (err) => console.error(err));
-
-    // Listen to Staff Members
-    const qStaff = collection(db, 'artifacts', appId, 'public', 'data', 'staff');
-    const unsubStaff = onSnapshot(qStaff, (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setStaff(data);
-    }, (err) => console.error(err));
-
-    return () => { unsubRecords(); unsubStaff(); };
-  }, [user]);
-
-  // Handle Login
-  const handleLogin = (e) => {
-    e.preventDefault();
-    // Admin login (Hardcoded for first access)
-    if (loginForm.u === 'admin' && loginForm.p === '4321') {
-      setCurrentUserData({ name: 'ප්‍රධාන පරිපාලක', role: 'admin' });
-      setIsLoggedIn(true);
-      return;
-    }
-    
-    // Staff login check
-    const found = staff.find(s => s.u === loginForm.u && s.p === loginForm.p);
-    if (found) {
-      setCurrentUserData({ ...found, role: 'staff' });
-      setIsLoggedIn(true);
-    } else {
-      alert("පරිශීලක නාමය හෝ මුද්‍රා පදය වැරදියි!");
-    }
-  };
-
-  // Add Staff Member
-  const addStaffMember = async (e) => {
-    e.preventDefault();
-    if (!user) return;
-    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), newStaff);
-    setNewStaff({ name: '', u: '', p: '' });
-    alert("කළමනාකරු සාර්ථකව ලියාපදිංචි කළා!");
-  };
-
-  // Save Transaction
-  const saveEntry = async (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const data = {
-      branch: fd.get('branch'),
-      type: fd.get('type'),
-      desc: fd.get('desc'),
-      amount: parseFloat(fd.get('amount')),
-      by: currentUserData.name,
-      time: Date.now(),
-      date: new Date().toLocaleDateString()
-    };
-    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), data);
-    e.target.reset();
-    setTab('home');
-  };
-
-  // Delete Record (Admin only)
-  const deleteItem = async (col, id) => {
-    if (!window.confirm("මෙය මැකීමට ඔබට විශ්වාසද?")) return;
-    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', col, id));
-  };
-
-  const stats = useMemo(() => {
-    return records.reduce((acc, r) => {
-      if (r.type === 'in') acc.in += r.amount; else acc.out += r.amount;
-      return acc;
-    }, { in: 0, out: 0 });
-  }, [records]);
-
-  if (!isLoggedIn) return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-600 p-6 font-sans">
-      <div className="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl text-center">
-        <div className="bg-blue-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-          <Lock className="w-10 h-10 text-blue-600" />
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Business Hub Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        .login-bg { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="app" class="max-w-md mx-auto min-h-screen relative pb-28">
+        
+        <!-- Login Screen -->
+        <div id="loginOverlay" class="fixed inset-0 z-[100] login-bg flex items-center justify-center p-6">
+            <div class="bg-white w-full rounded-[2.5rem] p-8 shadow-2xl text-center">
+                <div class="bg-blue-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="lock" class="w-10 h-10 text-blue-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Business Hub</h2>
+                <p class="text-slate-400 text-sm mb-8 font-medium">කරුණාකර පිවිසෙන්න</p>
+                <div class="space-y-4">
+                    <input id="uName" type="text" placeholder="පරිශීලක නාමය" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <input id="uPass" type="password" placeholder="මුද්‍රා පදය" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="handleLogin()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg active:scale-95 transition">ඇතුළු වන්න</button>
+                </div>
+                <p id="loginError" class="text-red-500 text-xs mt-4 hidden">විස්තර වැරදියි!</p>
+            </div>
         </div>
-        <h2 className="text-2xl font-bold text-slate-800">Business Hub</h2>
-        <p className="text-slate-400 text-sm mb-8">පිවිසුම</p>
-        <form onSubmit={handleLogin} className="space-y-4 text-left">
-          <input type="text" placeholder="පරිශීලක නාමය" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500" onChange={e => setLoginForm({...loginForm, u: e.target.value})} />
-          <input type="password" placeholder="මුද්‍රා පදය" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500" onChange={e => setLoginForm({...loginForm, p: e.target.value})} />
-          <button className="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">ඇතුළු වන්න</button>
-        </form>
-      </div>
+
+        <!-- Main Content -->
+        <div id="mainUI" class="hidden">
+            <header class="bg-blue-600 p-8 rounded-b-[3rem] text-white shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-xl font-bold">BUSINESS HUB</h1>
+                        <p id="userDisplay" class="text-[10px] opacity-70 font-bold uppercase tracking-widest"></p>
+                    </div>
+                    <button onclick="logout()" class="bg-white/20 p-2 rounded-xl active:scale-90 transition">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="bg-white/10 p-5 rounded-3xl border border-white/10 backdrop-blur-md">
+                    <p class="text-[10px] font-bold opacity-80 uppercase mb-1">මුළු ශුද්ධ ලාභය</p>
+                    <h2 id="netTotal" class="text-3xl font-bold">රු. 0</h2>
+                    <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/10">
+                        <div>
+                            <p class="text-[9px] font-bold opacity-70 uppercase">ආදායම</p>
+                            <p id="incTotal" class="font-bold text-green-300">රු. 0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] font-bold opacity-70 uppercase">වියදම</p>
+                            <p id="expTotal" class="font-bold text-red-300">රු. 0</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="p-5">
+                <!-- Home Tab -->
+                <div id="homeTabContent">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-4">සජීවී වාර්තා</h3>
+                    <div id="recordsList" class="space-y-3"></div>
+                </div>
+
+                <!-- Add Tab -->
+                <div id="addTabContent" class="hidden">
+                    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100">
+                        <h2 class="text-lg font-bold mb-5">දත්තයක් එක් කරන්න</h2>
+                        <form id="recordForm" class="space-y-4">
+                            <select id="fBranch" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                                <option>පරගම්මන ශොප්</option><option>රන්වල බයික් ශොප්</option><option>රන්වල ත්‍රීවීල් ශොප්</option>
+                                <option>කෑගල්ල ශොප්</option><option>හෙල්මට් ශොප්</option><option>කෑගල්ල වර්ක් ශොප්</option>
+                                <option>පරගම්මන වර්ක් ශොප්</option><option>කුෂන් වැඩපොළ</option>
+                            </select>
+                            <select id="fType" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                                <option value="in">ආදායම (Income)</option>
+                                <option value="out">වියදම (Expense)</option>
+                            </select>
+                            <input id="fDesc" type="text" placeholder="විස්තරය" required class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                            <input id="fAmount" type="number" step="0.01" placeholder="මුදල (රු.)" required class="w-full p-4 bg-slate-50 border rounded-2xl outline-none text-xl font-bold text-blue-600">
+                            <button type="submit" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg">සුරකින්න</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Admin Tab -->
+                <div id="adminTabContent" class="hidden">
+                    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 mb-6">
+                        <h2 class="text-lg font-bold mb-4">කළමනාකරුවෙකු එක් කිරීම</h2>
+                        <form id="staffForm" class="space-y-4">
+                            <input id="sName" placeholder="නම" required class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                            <input id="sUser" placeholder="Username" required class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                            <input id="sPass" placeholder="Password" type="password" required class="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
+                            <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold">රෙජිස්ටර් කරන්න</button>
+                        </form>
+                    </div>
+                    <div id="staffList" class="space-y-3"></div>
+                </div>
+            </main>
+
+            <!-- Navbar -->
+            <nav class="fixed bottom-6 left-6 right-6 max-w-sm mx-auto glass border border-white/50 shadow-2xl rounded-[2.5rem] p-3 flex justify-around items-center z-50">
+                <button onclick="setTab('home')" id="btnHome" class="flex flex-col items-center gap-1 text-blue-600">
+                    <i data-lucide="layout-grid" class="w-6 h-6"></i>
+                    <span class="text-[8px] font-bold uppercase">සාරාංශය</span>
+                </button>
+                <button onclick="setTab('add')" id="btnAdd" class="flex flex-col items-center gap-1 text-slate-300">
+                    <i data-lucide="plus-circle" class="w-6 h-6"></i>
+                    <span class="text-[8px] font-bold uppercase">එක් කරන්න</span>
+                </button>
+                <button onclick="setTab('admin')" id="btnAdmin" class="flex flex-col items-center gap-1 text-slate-300 hidden">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    <span class="text-[8px] font-bold uppercase">ඇඩ්මින්</span>
+                </button>
+            </nav>
+        </div>
     </div>
-  );
 
-  return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-50 pb-28 font-sans">
-      {/* Header */}
-      <header className="bg-blue-600 p-8 rounded-b-[3rem] text-white shadow-xl">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight uppercase">Business Hub</h1>
-            <p className="text-[10px] opacity-70 font-bold uppercase tracking-widest">{currentUserData.name}</p>
-          </div>
-          <button onClick={() => setIsLoggedIn(false)} className="bg-white/20 p-2 rounded-xl active:scale-90 transition">
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        <div className="bg-white/10 p-5 rounded-3xl border border-white/10 backdrop-blur-md">
-          <p className="text-[10px] font-bold opacity-80 uppercase mb-1">මුළු ශුද්ධ ලාභය</p>
-          <h2 className="text-3xl font-bold tracking-tight">රු. {(stats.in - stats.out).toLocaleString()}</h2>
-          <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/10">
-            <div>
-              <p className="text-[9px] font-bold opacity-70 uppercase">ආදායම</p>
-              <p className="font-bold text-green-300 text-lg">රු. {stats.in.toLocaleString()}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[9px] font-bold opacity-70 uppercase">වියදම</p>
-              <p className="font-bold text-red-300 text-lg">රු. {stats.out.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
-      </header>
+        const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = window.__app_id || 'pieris-motors-v3';
 
-      {/* Main Content */}
-      <main className="p-5">
-        {tab === 'home' && (
-          <div className="space-y-4">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">මෑත ගනුදෙනු (සජීවී)</h3>
-            {records.map(r => (
-              <div key={r.id} className="bg-white p-4 rounded-3xl border border-slate-100 flex justify-between items-center shadow-sm">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${r.type === 'in' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                    {r.type === 'in' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800 leading-tight">{r.branch}</p>
-                    <p className="text-[10px] text-slate-400 font-medium">By {r.by} | {r.desc}</p>
-                  </div>
+        let currentUser = null;
+        let staffData = [];
+
+        // Auth
+        signInAnonymously(auth);
+
+        // Login Logic
+        window.handleLogin = () => {
+            const u = document.getElementById('uName').value;
+            const p = document.getElementById('uPass').value;
+            
+            if (u === 'admin' && p === '4321') {
+                proceed({ name: 'ප්‍රධාන පරිපාලක', role: 'admin' });
+            } else {
+                const found = staffData.find(s => s.u === u && s.p === p);
+                if (found) proceed({ ...found, role: 'staff' });
+                else document.getElementById('loginError').classList.remove('hidden');
+            }
+        };
+
+        function proceed(user) {
+            currentUser = user;
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('mainUI').classList.remove('hidden');
+            document.getElementById('userDisplay').innerText = user.name;
+            if (user.role === 'admin') document.getElementById('btnAdmin').classList.remove('hidden');
+            initData();
+        }
+
+        window.logout = () => location.reload();
+
+        // Data Sync
+        function initData() {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snap) => {
+                const records = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.t - a.t);
+                renderRecords(records);
+            });
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), (snap) => {
+                staffData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderStaff();
+            });
+        }
+
+        function renderRecords(data) {
+            let inc = 0, exp = 0;
+            const list = document.getElementById('recordsList');
+            list.innerHTML = data.map(r => {
+                const isInc = r.type === 'in';
+                if(isInc) inc += r.amount; else exp += r.amount;
+                return `
+                    <div class="bg-white p-4 rounded-3xl border border-slate-100 flex justify-between items-center shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 rounded-2xl ${isInc ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}">
+                                <i data-lucide="${isInc ? 'arrow-up-right' : 'arrow-down-right'}" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">${r.branch}</p>
+                                <p class="text-[10px] text-slate-400 font-medium">By ${r.by} | ${r.desc}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <p class="font-bold ${isInc ? 'text-green-600' : 'text-red-600'}">${isInc ? '+' : '-'} ${r.amount.toLocaleString()}</p>
+                            ${currentUser.role === 'admin' ? `<button onclick="deleteDocItem('transactions','${r.id}')" class="text-slate-200 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('incTotal').innerText = 'රු. ' + inc.toLocaleString();
+            document.getElementById('expTotal').innerText = 'රු. ' + exp.toLocaleString();
+            document.getElementById('netTotal').innerText = 'රු. ' + (inc - exp).toLocaleString();
+            lucide.createIcons();
+        }
+
+        function renderStaff() {
+            const list = document.getElementById('staffList');
+            list.innerHTML = staffData.map(s => `
+                <div class="bg-white p-4 rounded-3xl border flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-blue-50 p-2 rounded-xl text-blue-600"><i data-lucide="user" class="w-5 h-5"></i></div>
+                        <div><p class="font-bold text-sm">${s.name}</p><p class="text-[10px] text-slate-400">User: ${s.u}</p></div>
+                    </div>
+                    <button onclick="deleteDocItem('staff','${s.id}')" class="text-red-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
-                <div className="text-right flex items-center gap-3">
-                   <p className={`font-bold ${r.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>{r.type === 'in' ? '+' : '-'} {r.amount.toLocaleString()}</p>
-                   {currentUserData.role === 'admin' && <button onClick={() => deleteItem('transactions', r.id)} className="text-slate-200 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+            `).join('');
+            lucide.createIcons();
+        }
 
-        {tab === 'add' && (
-          <form onSubmit={saveEntry} className="bg-white p-6 rounded-[2.5rem] shadow-xl space-y-5 animate-in slide-in-from-bottom-5">
-            <h2 className="text-lg font-bold text-slate-800">නව දත්තයක් එක් කිරීම</h2>
-            <div className="space-y-4">
-              <select name="branch" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
-                {["පරගම්මන ශොප්", "රන්වල බයික් ශොප්", "රන්වල ත්‍රීවීල් ශොප්", "කෑගල්ල ශොප්", "හෙල්මට් ශොප්", "කෑගල්ල වර්ක් ශොප්", "පරගම්මන වර්ක් ශොප්", "කුෂන් වැඩපොළ"].map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-              <select name="type" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none">
-                <option value="in">ආදායම (Income)</option>
-                <option value="out">වියදම (Expense)</option>
-              </select>
-              <input name="desc" type="text" placeholder="විස්තරය (Description)" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none" />
-              <input name="amount" type="number" step="0.01" placeholder="මුදල (රු.)" required className="w-full p-4 bg-slate-50 border rounded-2xl outline-none text-xl font-bold text-blue-600" />
-              <button className="w-full bg-blue-600 text-white p-5 rounded-2xl font-bold shadow-lg active:scale-95 transition">දත්තය සුරකින්න</button>
-            </div>
-          </form>
-        )}
+        window.deleteDocItem = async (col, id) => {
+            if(confirm("මකා දැමීමට සහතිකද?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', col, id));
+        };
 
-        {tab === 'admin' && (
-          <div className="space-y-6 animate-in slide-in-from-bottom-5">
-            <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><UserPlus className="w-5 h-5 text-blue-600" /> කළමනාකරුවෙකු එක් කිරීම</h3>
-              <form onSubmit={addStaffMember} className="space-y-4">
-                <input value={newStaff.name} placeholder="නම (Name)" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none" onChange={e => setNewStaff({...newStaff, name: e.target.value})} required />
-                <input value={newStaff.u} placeholder="Username" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none" onChange={e => setNewStaff({...newStaff, u: e.target.value})} required />
-                <input value={newStaff.p} placeholder="Password" type="password" className="w-full p-4 bg-slate-50 border rounded-2xl outline-none" onChange={e => setNewStaff({...newStaff, p: e.target.value})} required />
-                <button className="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold">රෙජිස්ටර් කරන්න</button>
-              </form>
-            </div>
+        // Tabs
+        window.setTab = (t) => {
+            ['home', 'add', 'admin'].forEach(tab => {
+                document.getElementById(tab + 'TabContent').classList.toggle('hidden', tab !== t);
+                const btn = document.getElementById('btn' + tab.charAt(0).toUpperCase() + tab.slice(1));
+                btn.classList.toggle('text-blue-600', tab === t);
+                btn.classList.toggle('text-slate-300', tab !== t);
+            });
+        };
 
-            <div className="space-y-3">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">පවතින කළමනාකරුවන්</h3>
-              {staff.map(s => (
-                <div key={s.id} className="bg-white p-4 rounded-3xl border border-slate-100 flex justify-between items-center shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-50 p-2 rounded-xl"><Users className="w-5 h-5 text-blue-600" /></div>
-                    <div><p className="font-bold text-sm">{s.name}</p><p className="text-[10px] text-slate-400">User: {s.u} | Pass: {s.p}</p></div>
-                  </div>
-                  <button onClick={() => deleteItem('staff', s.id)} className="text-slate-200 hover:text-red-400 p-2"><Trash2 className="w-5 h-5" /></button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </main>
+        // Forms
+        document.getElementById('recordForm').onsubmit = async (e) => {
+            e.preventDefault();
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), {
+                branch: document.getElementById('fBranch').value,
+                type: document.getElementById('fType').value,
+                desc: document.getElementById('fDesc').value,
+                amount: parseFloat(document.getElementById('fAmount').value),
+                by: currentUser.name,
+                t: Date.now()
+            });
+            e.target.reset();
+            setTab('home');
+        };
 
-      {/* Navigation */}
-      <nav className="fixed bottom-6 left-6 right-6 max-w-sm mx-auto bg-white/90 backdrop-blur-xl border border-white/50 shadow-2xl rounded-[2.5rem] p-3 flex justify-around items-center z-50">
-        <button onClick={() => setTab('home')} className={`flex flex-col items-center gap-1 transition ${tab === 'home' ? 'text-blue-600 scale-110' : 'text-slate-300'}`}>
-          <LayoutGrid className="w-6 h-6" /><span className="text-[8px] font-bold uppercase">සාරාංශය</span>
-        </button>
-        <button onClick={() => setTab('add')} className={`flex flex-col items-center gap-1 transition ${tab === 'add' ? 'text-blue-600 scale-110' : 'text-slate-300'}`}>
-          <PlusCircle className="w-6 h-6" /><span className="text-[8px] font-bold uppercase">එක් කරන්න</span>
-        </button>
-        {currentUserData.role === 'admin' && (
-          <button onClick={() => setTab('admin')} className={`flex flex-col items-center gap-1 transition ${tab === 'admin' ? 'text-blue-600 scale-110' : 'text-slate-300'}`}>
-            <ShieldCheck className="w-6 h-6" /><span className="text-[8px] font-bold uppercase">ඇඩ්මින්</span>
-          </button>
-        )}
-      </nav>
-    </div>
-  );
-}
+        document.getElementById('staffForm').onsubmit = async (e) => {
+            e.preventDefault();
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), {
+                name: document.getElementById('sName').value,
+                u: document.getElementById('sUser').value,
+                p: document.getElementById('sPass').value
+            });
+            e.target.reset();
+        };
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
